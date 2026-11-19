@@ -13,13 +13,14 @@ const expandedProductIds = new Set();
 
 /* Use the class-hosted Cloudflare Worker URL from the project README */
 const workerUrl = "https://loreal-routine.your-subdomain.workers.dev/";
+let routineGenerated = false;
 
 /* Keep the conversation so the AI can answer follow-up questions */
 const messages = [
   {
     role: "system",
     content:
-      "You are a helpful L'Oreal skincare and beauty advisor. Create clear, personalized routines using only the selected products supplied by the user.",
+      "You are a helpful L'Oreal skincare and beauty advisor. Create clear, personalized routines using only the selected products supplied by the user. Answer only questions about the generated routine or beauty topics such as skincare, haircare, makeup, fragrance, and closely related areas. Politely explain that unrelated topics are outside your role.",
   },
 ];
 
@@ -206,14 +207,24 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
+/* Add a visible message to the chat transcript */
+function displayChatMessage(role, text) {
+  const messageElement = document.createElement("div");
+  messageElement.className = `chat-message ${role}`;
+  messageElement.textContent = text;
+  chatWindow.appendChild(messageElement);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
 /* Send a message to the Cloudflare Worker and read the AI response */
-async function sendMessage(message) {
+async function sendMessage(message, visibleMessage = message) {
   messages.push({
     role: "user",
     content: message,
   });
 
-  chatWindow.textContent = "Thinking...";
+  displayChatMessage("user", visibleMessage);
+  displayChatMessage("assistant", "Thinking...");
 
   try {
     const response = await fetch(workerUrl, {
@@ -238,10 +249,19 @@ async function sendMessage(message) {
       content: reply,
     });
 
-    chatWindow.textContent = reply;
+    const thinkingMessage = chatWindow.querySelector(".chat-message.assistant:last-child");
+    if (thinkingMessage) thinkingMessage.remove();
+    displayChatMessage("assistant", reply);
+    return true;
   } catch (error) {
-    chatWindow.textContent =
-      "Sorry, I could not generate a response. Please try again.";
+    messages.pop();
+    const thinkingMessage = chatWindow.querySelector(".chat-message.assistant:last-child");
+    if (thinkingMessage) thinkingMessage.remove();
+    displayChatMessage(
+      "assistant",
+      "Sorry, I could not generate a response. Please try again."
+    );
+    return false;
   }
 }
 
@@ -268,7 +288,14 @@ generateRoutineButton.addEventListener("click", async () => {
     "and include tips when helpful.\n\nSelected products:\n" +
     JSON.stringify(selectedProductData, null, 2);
 
-  await sendMessage(message);
+  chatWindow.innerHTML = "";
+  const generatedSuccessfully = await sendMessage(
+    message,
+    "Generate a personalized routine from my selected products."
+  );
+  if (generatedSuccessfully) {
+    routineGenerated = true;
+  }
 });
 
 /* Send follow-up questions using the saved conversation history */
@@ -279,6 +306,12 @@ chatForm.addEventListener("submit", async (e) => {
   const question = userInput.value.trim();
 
   if (question === "") return;
+
+  if (!routineGenerated) {
+    chatWindow.textContent =
+      "Generate a routine first, then ask me a follow-up question.";
+    return;
+  }
 
   userInput.value = "";
   await sendMessage(question);

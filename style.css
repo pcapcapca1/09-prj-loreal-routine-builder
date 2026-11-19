@@ -124,12 +124,27 @@ body {
   padding: 22px;
   font-size: 15px;
   line-height: 1.5;
-  white-space: pre-wrap;
   height: 260px;
   overflow-y: auto;
   background: #f7f3ed;
   margin-bottom: 20px;
   border-left: 4px solid var(--red);
+}
+
+.chat-message {
+  width: fit-content;
+  max-width: 85%;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.chat-message.user {
+  margin-left: auto;
+  border-color: var(--gold);
+  background: #fff9ea;
 }
 
 /* placeholder message */
