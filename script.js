@@ -5,11 +5,15 @@ const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const generateRoutineButton = document.getElementById("generateRoutine");
+const clearSelectedProductsButton = document.getElementById(
+  "clearSelectedProducts"
+);
 
 /* Store selected products by id so they stay selected across categories */
 const selectedProducts = new Map();
 let allProducts = null;
 const expandedProductIds = new Set();
+const selectedProductsStorageKey = "loreal-selected-products";
 
 /* Use the class-hosted Cloudflare Worker URL from the project README */
 const workerUrl = "https://loreal-routine.your-subdomain.workers.dev/";
@@ -24,7 +28,39 @@ const messages = [
   },
 ];
 
-/* Start the selected-products list in its empty state */
+/* Save selected products so they remain available after a page reload */
+function saveSelectedProducts() {
+  const productsToSave = Array.from(selectedProducts.values());
+  try {
+    localStorage.setItem(
+      selectedProductsStorageKey,
+      JSON.stringify(productsToSave)
+    );
+  } catch (error) {
+    /* The app will still work if browser storage is unavailable */
+  }
+}
+
+/* Restore saved product objects when the page loads */
+function restoreSelectedProducts() {
+  const savedProducts = localStorage.getItem(selectedProductsStorageKey);
+  if (!savedProducts) return;
+
+  try {
+    const products = JSON.parse(savedProducts);
+    products.forEach((product) => {
+      if (product && product.id) {
+        selectedProducts.set(product.id, product);
+      }
+    });
+  } catch (error) {
+    localStorage.removeItem(selectedProductsStorageKey);
+  }
+}
+
+restoreSelectedProducts();
+
+/* Start the selected-products list with restored or empty selections */
 displaySelectedProducts();
 
 /* Show initial placeholder until user selects a category */
@@ -85,9 +121,11 @@ function displaySelectedProducts() {
   if (selectedProducts.size === 0) {
     selectedProductsList.innerHTML =
       '<p class="selected-empty">No products selected yet</p>';
+    clearSelectedProductsButton.hidden = true;
     return;
   }
 
+  clearSelectedProductsButton.hidden = false;
   selectedProductsList.innerHTML = Array.from(selectedProducts.values())
     .map(
       (product) => `
@@ -131,6 +169,8 @@ async function toggleProduct(productId) {
   }
 
   displaySelectedProducts();
+  saveSelectedProducts();
+  routineGenerated = false;
 }
 
 /* Let users select or unselect cards */
@@ -191,6 +231,24 @@ selectedProductsList.addEventListener("click", (e) => {
     card.setAttribute("aria-pressed", "false");
     card.querySelector(".selection-label").textContent = "Select";
   }
+
+  saveSelectedProducts();
+  routineGenerated = false;
+});
+
+/* Clear every saved selection at once */
+clearSelectedProductsButton.addEventListener("click", () => {
+  selectedProducts.clear();
+  saveSelectedProducts();
+  displaySelectedProducts();
+
+  document.querySelectorAll(".product-card.selected").forEach((card) => {
+    card.classList.remove("selected");
+    card.setAttribute("aria-pressed", "false");
+    card.querySelector(".selection-label").textContent = "Select";
+  });
+
+  routineGenerated = false;
 });
 
 /* Filter and display products when category changes */

@@ -421,6 +421,27 @@ body {
   outline: none;
 }
 
+.clear-products-btn {
+  display: block;
+  margin-top: 16px;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid var(--gold);
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.clear-products-btn:hover,
+.clear-products-btn:focus-visible {
+  color: var(--gold);
+  border-bottom-color: #fff;
+  outline: none;
+}
+
 .generate-btn {
   width: 100%;
   margin-top: 20px;
