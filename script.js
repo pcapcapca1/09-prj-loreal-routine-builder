@@ -1,5 +1,6 @@
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
+const productSearch = document.getElementById("productSearch");
 const productsContainer = document.getElementById("productsContainer");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
@@ -251,19 +252,44 @@ clearSelectedProductsButton.addEventListener("click", () => {
   routineGenerated = false;
 });
 
-/* Filter and display products when category changes */
-categoryFilter.addEventListener("change", async (e) => {
+/* Combine the category and text filters, then show matching products */
+async function filterProducts() {
   const products = await loadProducts();
-  const selectedCategory = e.target.value;
+  const selectedCategory = categoryFilter.value;
+  const searchText = productSearch.value.trim().toLowerCase();
 
-  /* filter() creates a new array containing only products 
-     where the category matches what the user selected */
-  const filteredProducts = products.filter(
-    (product) => product.category === selectedCategory
-  );
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      selectedCategory === "" || product.category === selectedCategory;
+    const searchableText = [
+      product.name,
+      product.brand,
+      product.category,
+      product.description,
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matchesSearch =
+      searchText === "" || searchableText.includes(searchText);
+
+    return matchesCategory && matchesSearch;
+  });
+
+  if (filteredProducts.length === 0) {
+    productsContainer.innerHTML = `
+      <div class="placeholder-message">
+        No products match your search
+      </div>
+    `;
+    return;
+  }
 
   displayProducts(filteredProducts);
-});
+}
+
+/* Update the grid whenever either filter changes */
+categoryFilter.addEventListener("change", filterProducts);
+productSearch.addEventListener("input", filterProducts);
 
 /* Add a visible message to the chat transcript */
 function displayChatMessage(role, text) {

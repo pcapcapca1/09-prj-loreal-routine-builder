@@ -82,7 +82,8 @@ body {
   text-transform: uppercase;
 }
 
-.search-section select {
+.search-section select,
+.search-section input {
   width: 100%;
   padding: 17px 18px;
   font-family: inherit;
@@ -94,7 +95,8 @@ body {
   font-weight: 500;
 }
 
-.search-section select:focus {
+.search-section select:focus,
+.search-section input:focus {
   outline: none;
   border-color: var(--red);
   box-shadow: 4px 4px 0 var(--gold);
