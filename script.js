@@ -8,6 +8,7 @@ const selectedProductsList = document.getElementById("selectedProductsList");
 /* Store selected products by id so they stay selected across categories */
 const selectedProducts = new Map();
 let allProducts = null;
+const expandedProductIds = new Set();
 
 /* Start the selected-products list in its empty state */
 displaySelectedProducts();
@@ -34,7 +35,7 @@ function displayProducts(products) {
   productsContainer.innerHTML = products
     .map(
       (product) => `
-    <div class="product-card ${selectedProducts.has(product.id) ? "selected" : ""}"
+    <div class="product-card ${selectedProducts.has(product.id) ? "selected" : ""} ${expandedProductIds.has(product.id) ? "expanded" : ""}"
          role="button"
          tabindex="0"
          aria-pressed="${selectedProducts.has(product.id)}"
@@ -46,6 +47,18 @@ function displayProducts(products) {
         <span class="selection-label">
           ${selectedProducts.has(product.id) ? "Selected" : "Select"}
         </span>
+        <button type="button"
+                class="details-toggle"
+                data-product-id="${product.id}"
+                aria-expanded="${expandedProductIds.has(product.id)}"
+                aria-controls="description-${product.id}">
+          ${expandedProductIds.has(product.id) ? "Hide details" : "View details"}
+          <i class="fa-solid ${expandedProductIds.has(product.id) ? "fa-minus" : "fa-plus"}"></i>
+        </button>
+        <p class="product-description"
+           id="description-${product.id}">
+          ${product.description}
+        </p>
       </div>
     </div>
   `
@@ -108,6 +121,26 @@ async function toggleProduct(productId) {
 
 /* Let users select or unselect cards */
 productsContainer.addEventListener("click", (e) => {
+  const detailsButton = e.target.closest(".details-toggle");
+  if (detailsButton) {
+    const productId = Number(detailsButton.dataset.productId);
+    const card = detailsButton.closest(".product-card");
+    const isExpanded = expandedProductIds.has(productId);
+
+    if (isExpanded) {
+      expandedProductIds.delete(productId);
+    } else {
+      expandedProductIds.add(productId);
+    }
+
+    card.classList.toggle("expanded", !isExpanded);
+    detailsButton.setAttribute("aria-expanded", !isExpanded);
+    detailsButton.innerHTML = isExpanded
+      ? 'View details <i class="fa-solid fa-plus"></i>'
+      : 'Hide details <i class="fa-solid fa-minus"></i>';
+    return;
+  }
+
   const card = e.target.closest(".product-card");
   if (card) {
     toggleProduct(Number(card.dataset.productId));
@@ -116,6 +149,8 @@ productsContainer.addEventListener("click", (e) => {
 
 /* Support keyboard use on product cards */
 productsContainer.addEventListener("keydown", (e) => {
+  if (e.target.closest(".details-toggle")) return;
+
   if (e.key === "Enter" || e.key === " ") {
     const card = e.target.closest(".product-card");
     if (card) {
