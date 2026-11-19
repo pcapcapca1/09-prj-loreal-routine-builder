@@ -24,7 +24,7 @@ const messages = [
   {
     role: "system",
     content:
-      "You are a helpful L'Oreal skincare and beauty advisor. Create clear, personalized routines using only the selected products supplied by the user. Answer only questions about the generated routine or beauty topics such as skincare, haircare, makeup, fragrance, and closely related areas. Politely explain that unrelated topics are outside your role.",
+      "You are a helpful L'Oreal skincare and beauty advisor. Search the web for current, relevant information and cite official L'Oreal or reliable beauty sources. Create clear, personalized routines using only the selected products supplied by the user. Answer only questions about the generated routine or beauty topics such as skincare, haircare, makeup, fragrance, and closely related areas. Politely explain that unrelated topics are outside your role.",
   },
 ];
 
@@ -274,6 +274,40 @@ function displayChatMessage(role, text) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
+/* Add the web sources returned by the search model as clickable links. */
+function displaySourceLinks(annotations) {
+  const citationLinks = new Map();
+
+  annotations.forEach((annotation) => {
+    const citation = annotation.url_citation ||
+      (annotation.type === "url_citation" ? annotation : null);
+    if (citation && citation.url) {
+      citationLinks.set(citation.url, citation.title || citation.url);
+    }
+  });
+
+  if (citationLinks.size === 0) return;
+
+  const sourcesElement = document.createElement("div");
+  sourcesElement.className = "chat-message assistant sources";
+  const heading = document.createElement("strong");
+  heading.textContent = "Sources";
+  sourcesElement.appendChild(heading);
+
+  citationLinks.forEach((title, url) => {
+    const sourceLink = document.createElement("a");
+    sourceLink.href = url;
+    sourceLink.target = "_blank";
+    sourceLink.rel = "noopener noreferrer";
+    sourceLink.textContent = title;
+    sourcesElement.appendChild(document.createElement("br"));
+    sourcesElement.appendChild(sourceLink);
+  });
+
+  chatWindow.appendChild(sourcesElement);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
 /* Send a message to the Cloudflare Worker and read the AI response */
 async function sendMessage(message, visibleMessage = message) {
   messages.push({
@@ -301,6 +335,10 @@ async function sendMessage(message, visibleMessage = message) {
 
     const data = await response.json();
     const reply = data.choices[0].message.content;
+    const annotations =
+      data.choices[0].message.annotations ||
+      data.choices[0].message.content_annotations ||
+      [];
 
     messages.push({
       role: "assistant",
@@ -310,6 +348,7 @@ async function sendMessage(message, visibleMessage = message) {
     const thinkingMessage = chatWindow.querySelector(".chat-message.assistant:last-child");
     if (thinkingMessage) thinkingMessage.remove();
     displayChatMessage("assistant", reply);
+    displaySourceLinks(annotations);
     return true;
   } catch (error) {
     messages.pop();
