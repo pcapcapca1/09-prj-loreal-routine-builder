@@ -246,6 +246,26 @@ body {
   box-shadow: 6px 6px 0 var(--gold);
 }
 
+.product-card.selected {
+  border: 2px solid var(--red);
+  box-shadow: 6px 6px 0 rgba(227, 165, 53, 0.55);
+  background: #fffafa;
+}
+
+.selection-label {
+  align-self: flex-start;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.product-card.selected .selection-label {
+  color: var(--red);
+}
+
 .product-card img {
   width: 110px;
   height: 110px;
@@ -290,6 +310,54 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.selected-empty {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+}
+
+.selected-product {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 260px;
+  padding: 7px 7px 7px 9px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.selected-product img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.selected-product span {
+  flex: 1;
+  line-height: 1.25;
+}
+
+.remove-product {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.remove-product:hover,
+.remove-product:focus {
+  background: var(--red);
+  color: #fff;
+  outline: none;
 }
 
 .generate-btn {
