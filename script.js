@@ -15,8 +15,8 @@ let allProducts = null;
 const expandedProductIds = new Set();
 const selectedProductsStorageKey = "loreal-selected-products";
 
-/* Use the class-hosted Cloudflare Worker URL from the project README */
-const workerUrl = "https://loreal-routine.your-subdomain.workers.dev/";
+/* Send requests to the project's Cloudflare Worker */
+const workerUrl = "https://lorealchatbotworker.pcapcapca1.workers.dev/";
 let routineGenerated = false;
 
 /* Keep the conversation so the AI can answer follow-up questions */
