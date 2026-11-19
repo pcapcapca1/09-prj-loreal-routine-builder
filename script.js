@@ -4,11 +4,24 @@ const productsContainer = document.getElementById("productsContainer");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const selectedProductsList = document.getElementById("selectedProductsList");
+const generateRoutineButton = document.getElementById("generateRoutine");
 
 /* Store selected products by id so they stay selected across categories */
 const selectedProducts = new Map();
 let allProducts = null;
 const expandedProductIds = new Set();
+
+/* Use the class-hosted Cloudflare Worker URL from the project README */
+const workerUrl = "https://loreal-routine.your-subdomain.workers.dev/";
+
+/* Keep the conversation so the AI can answer follow-up questions */
+const messages = [
+  {
+    role: "system",
+    content:
+      "You are a helpful L'Oreal skincare and beauty advisor. Create clear, personalized routines using only the selected products supplied by the user.",
+  },
+];
 
 /* Start the selected-products list in its empty state */
 displaySelectedProducts();
@@ -193,9 +206,80 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Chat form submission handler - placeholder for OpenAI integration */
-chatForm.addEventListener("submit", (e) => {
+/* Send a message to the Cloudflare Worker and read the AI response */
+async function sendMessage(message) {
+  messages.push({
+    role: "user",
+    content: message,
+  });
+
+  chatWindow.textContent = "Thinking...";
+
+  try {
+    const response = await fetch(workerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: messages,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Could not connect to the routine assistant.");
+    }
+
+    const data = await response.json();
+    const reply = data.choices[0].message.content;
+
+    messages.push({
+      role: "assistant",
+      content: reply,
+    });
+
+    chatWindow.textContent = reply;
+  } catch (error) {
+    chatWindow.textContent =
+      "Sorry, I could not generate a response. Please try again.";
+  }
+}
+
+/* Generate a routine from only the products selected by the user */
+generateRoutineButton.addEventListener("click", async () => {
+  if (selectedProducts.size === 0) {
+    chatWindow.textContent =
+      "Please select at least one product before generating a routine.";
+    return;
+  }
+
+  const selectedProductData = Array.from(selectedProducts.values()).map(
+    (product) => ({
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      description: product.description,
+    })
+  );
+
+  const message =
+    "Create a personalized routine using only these selected products. " +
+    "Organize the steps clearly, explain the purpose of each step, " +
+    "and include tips when helpful.\n\nSelected products:\n" +
+    JSON.stringify(selectedProductData, null, 2);
+
+  await sendMessage(message);
+});
+
+/* Send follow-up questions using the saved conversation history */
+chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+  const userInput = document.getElementById("userInput");
+  const question = userInput.value.trim();
+
+  if (question === "") return;
+
+  userInput.value = "";
+  await sendMessage(question);
 });
