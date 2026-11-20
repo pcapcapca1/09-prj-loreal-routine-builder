@@ -9,6 +9,7 @@ const generateRoutineButton = document.getElementById("generateRoutine");
 const clearSelectedProductsButton = document.getElementById(
   "clearSelectedProducts"
 );
+const directionToggle = document.getElementById("directionToggle");
 
 /* Store selected products by id so they stay selected across categories */
 const selectedProducts = new Map();
@@ -19,6 +20,14 @@ const selectedProductsStorageKey = "loreal-selected-products";
 /* Send requests to the project's Cloudflare Worker */
 const workerUrl = "https://lorealchatbotworker.pcapcapca1.workers.dev/";
 let routineGenerated = false;
+
+/* Let users switch the layout direction for RTL languages. */
+directionToggle.addEventListener("click", () => {
+  const isRtl = document.documentElement.dir === "rtl";
+  document.documentElement.dir = isRtl ? "ltr" : "rtl";
+  directionToggle.textContent = isRtl ? "Enable RTL" : "Use LTR";
+  directionToggle.setAttribute("aria-pressed", String(!isRtl));
+});
 
 /* Keep the conversation so the AI can answer follow-up questions */
 const messages = [
